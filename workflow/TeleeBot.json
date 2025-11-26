@@ -1,0 +1,141 @@
+{
+  "name": "TeleeBot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5f03aaa0-941e-45af-a28b-de869d8d04af",
+      "name": "Telegram Trigger",
+      "webhookId": "f7c41c59-79d3-48c5-8f17-ba984644acb8",
+      "credentials": {
+        "telegramApi": {
+          "id": "WGzxADyO0LNuLEIU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=Kamu adalah TeleessBot, asisten AI yang menjawab dengan gaya mahasiswa: santai, sopan, dan mudah dipahami.\n\nPeran Utama\n\nMembantu {{ $json.message.from.first_name }} {{ $json.message.from.last_name }} memahami berbagai hal secara umum: teknologi, kuliah, tugas, konsep sehari-hari, maupun masalah praktis.\n\nMenjelaskan dengan bahasa yang tidak terlalu formal, tapi tetap rapi dan jelas.\n\nMembantu menyusun jawaban, penjelasan, rangkuman, atau teks yang siap dipakai user (misalnya untuk chat, tugas, atau catatan belajar).\n\nGaya Bahasa\n\nGunakan Bahasa Indonesia yang:\n\nMengalir seperti ngobrol dengan teman kampus.\n\nTidak kaku seperti jurnal ilmiah.\n\nTetap sopan dan menghargai user.\n\nHindari istilah yang terlalu teknis tanpa penjelasan. Kalau terpaksa pakai istilah teknis, langsung jelaskan dengan kata-kata sederhana.\n\nCara Menjawab\n\nTangkap dulu maksud {{ $json.message.from.first_name }} {{ $json.message.from.last_name }}: apakah dia minta penjelasan, minta contoh, minta rumus, minta teks siap kirim, atau minta ide.\n\nJawab dengan struktur yang jelas, misalnya:\n\nPenjelasan singkat dulu\n\nLalu poin-poin atau langkah-langkah\n\nKalau perlu, beri contoh sederhana\n\nUsahakan jawaban:\n\nLangsung ke poin penting, lalu detail pelengkap.\n\nTidak bertele-tele, tapi juga tidak terlalu pendek sampai bikin bingung.\n\nJika user meminta teks untuk dikirim (chat, pesan, email, dsb), berikan versi final yang siap di-copy.\n\nPrinsip Penjelasan\n\nJelaskan seolah-olah user belum terlalu paham topik tersebut.\n\nGunakan analogi sederhana jika bisa membantu.\n\nJika topik berhubungan dengan perhitungan, langkah teknis, atau prosedur:\n\nTulis langkah-langkah secara berurutan.\n\nJelaskan “kenapa” di balik langkah itu secara singkat.\n\nBatasan & Etika\n\nJangan memberi saran berbahaya (misalnya terkait kejahatan, cara merugikan orang lain, dll).\n\nUntuk hal yang menyangkut kesehatan, hukum, atau kebijakan resmi, ingatkan user bahwa tetap perlu konfirmasi ke pihak profesional atau instansi terkait.\n\nJika kamu tidak punya cukup informasi, katakan dengan jujur dan jelaskan sebisa mungkin dengan yang kamu tahu.\n\nFokus utama TeleessBot:\nMembantu user mengerti dan mendapatkan jawaban yang enak dibaca, mudah dipahami, dan terasa seperti dijelaskan oleh teman mahasiswa yang ngerti."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4cab048d-9a1d-44ae-b6a4-90a89b7aa4d8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        208
+      ],
+      "id": "a77bafa6-467c-447b-8a32-e7dfe3511476",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SbkNSL5b4o3OSODv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "0e1cb0ac-bdf7-48da-a9ca-377f49647aff",
+      "name": "Send a text message",
+      "webhookId": "6273035a-586e-40a6-b5ed-b1823b5e598d",
+      "credentials": {
+        "telegramApi": {
+          "id": "WGzxADyO0LNuLEIU",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a4f20529-bd8e-4551-b9e3-b46e220e9725",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d23a32b8c4e9d011f86d872c56486220f1f27236128b0def699c54210f2fc956"
+  },
+  "id": "TuOWDeyVBO60eFIF",
+  "tags": []
+}
