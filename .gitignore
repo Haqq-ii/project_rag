@@ -1,0 +1,18 @@
+# Seluruh data runtime n8n (termasuk encryptionKey, DB, log)
+n8n/n8n_data/
+n8n/.n8n/
+
+# File env / rahasia
+.env
+*.env
+
+# File config
+*.config
+
+# Database & log umum
+*.sqlite
+*.log
+logs/
+
+# Node modules (kalau nanti ada)
+node_modules/
