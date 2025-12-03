@@ -1,0 +1,132 @@
+{
+  "name": "WebApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "open-ai",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        256,
+        -16
+      ],
+      "id": "bd72894a-fff0-419f-a259-a6dcd182264f",
+      "name": "Webhook",
+      "webhookId": "dcfcbcbb-c907-4cae-8ec4-0aeb21ec27e8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        960,
+        -16
+      ],
+      "id": "4eef8b11-6e7c-4c7c-a247-620ee630d74a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Ambil teks dari berbagai kemungkinan struktur output OpenAI\n\nlet text =\n  $json.text ||                          // kalau simplify output = ON dan langsung kasih 'text'\n  $json.message?.content ||              // kalau $json adalah 1 choice { index, message:{content} }\n  $json.choices?.[0]?.message?.content ||// kalau $json adalah full response dari OpenAI\n  $json.response?.[0]?.content?.[0]?.text || // kalau pakai format baru \"response[0].content[0].text\"\n  'Model tidak mengembalikan jawaban.';\n\n// Kirim ke webapp dalam format { reply: \"...\" }\nreturn {\n  reply: text,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -16
+      ],
+      "id": "fbd9e5fb-5bf9-44db-80fa-0eae2e2f747b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Kamu adalah ASTA, asisten AI bahasa Indonesia yang menjawab dengan gaya mahasiswa, santai, jelas, dan ringkas. Jawablah sesuai konteks pertanyaan user.\n",
+              "role": "system"
+            },
+            {
+              "content": "={{$json[\"body\"][\"message\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        464,
+        -16
+      ],
+      "id": "5bd4089c-e34a-4c55-9d2d-5d943ca93bd4",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SbkNSL5b4o3OSODv",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aa11d13f-3c43-4211-a0d4-00c449f1b697",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d23a32b8c4e9d011f86d872c56486220f1f27236128b0def699c54210f2fc956"
+  },
+  "id": "qMs5SEhVykkEtrpg",
+  "tags": []
+}
