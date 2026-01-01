@@ -10,9 +10,31 @@ services:
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=admin123
-      - N8N_HOST=localhost
+
+      # penting untuk akses dari luar
+      - N8N_HOST=n8n.karierin.cloud
       - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+
+      # URL editor & webhook yang benar (bukan ngrok)
+      - N8N_EDITOR_BASE_URL=https://n8n.karierin.cloud
+      - WEBHOOK_URL=https://n8n.karierin.cloud
+
       - N8N_COMMUNITY_PACKAGES_ALLOW=true
-      - N8N_EDITOR_BASE_URL=https://imperious-susie-divaricately.ngrok-free.dev
-      - WEBHOOK_URL=https://imperious-susie-divaricately.ngrok-free.dev
       - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=https://orrpqtnwojzydznwplgb.supabase.co
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ycnBxdG53b2p6eWR6bndwbGdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NTY1MTQsImV4cCI6MjA4MjEzMjUxNH0.DC3UUlpZqQnxQB6ZOXBhD3GRUPIS0C_ObGqFSAdnu1Y
+    ports:
+      - "3008:3008"
+    env_file:
+      - ./webapp/.env.local
+    environment:
+      - N8N_WEBHOOK_URL=https://n8n.karierin.cloud/webhook/ai-hrd
+      - PORT=3008
+    restart: unless-stopped

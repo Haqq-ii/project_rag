@@ -1,0 +1,398 @@
+{
+  "name": "ChatAI",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 1
+        }
+      },
+      "id": "f153b9ff-cc83-4170-bfa1-e96b433bb853",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        -640,
+        240
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "SbkNSL5b4o3OSODv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Listen for incoming events').first().json.message.from.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "e1ce9380-c9a2-4b79-9457-3ae38e69393d",
+      "name": "Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -48,
+        176
+      ],
+      "typeVersion": 1.1,
+      "webhookId": "0d0f77b1-076b-4954-888e-b5bc98b66f02",
+      "credentials": {
+        "telegramApi": {
+          "id": "WGzxADyO0LNuLEIU",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}\n",
+        "text": "={{ $('AI Agent').item.json.output.replace(/&/g, \"&amp;\").replace(/>/g, \"&gt;\").replace(/</g, \"&lt;\").replace(/\"/g, \"&quot;\") }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "0570e922-ef97-4304-80fd-5c6e779c8f34",
+      "name": "Correct errors",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        192,
+        176
+      ],
+      "typeVersion": 1.1,
+      "webhookId": "e33e0672-4a19-448a-817c-91bb2b859525",
+      "credentials": {
+        "telegramApi": {
+          "id": "WGzxADyO0LNuLEIU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "agent": "openAiFunctionsAgent",
+        "text": "={{ $json.body?.message || $json.message?.text || $json.message || '' }}",
+        "options": {
+          "systemMessage": "Kamu adalah asisten HRD profesional.\n\nATURAN UTAMA (WAJIB):\n1. Untuk SETIAP pertanyaan user, kamu WAJIB terlebih dahulu mencari jawaban menggunakan tool:\n   \"Pinecone Vector Store\".\n\n2. Kamu HARUS mengevaluasi hasil dari Pinecone:\n   - Jika Pinecone mengembalikan dokumen (hasil tidak kosong),\n     maka jawaban HARUS disusun HANYA berdasarkan informasi dari Pinecone.\n     Jangan menambahkan pengetahuan dari luar Pinecone.\n\n3. Jika Pinecone TIDAK mengembalikan hasil (hasil kosong / tidak relevan),\n   maka kamu BOLEH menjawab menggunakan pengetahuan umum dari OpenAI\n   dengan jawaban yang jelas, ringkas, dan profesional.\n\n4. Jangan pernah mengarang isi seolah-olah berasal dari Pinecone jika data tidak ada.\n\nFORMAT OUTPUT (WAJIB):\n- Jika jawaban berasal dari Pinecone:\n  Jawab langsung isi informasinya secara profesional.\n\n- Jika jawaban TIDAK berasal dari Pinecone:\n  Awali jawaban dengan kalimat:\n  \"Data tidak ditemukan di basis data internal. Berikut penjelasan umum:\"\n\nLARANGAN:\n- Jangan menyebut kata \"Pinecone\", \"vector\", \"embedding\", atau istilah teknis internal ke user.\n- Jangan menolak menjawab jika Pinecone kosong.\n"
+        }
+      },
+      "id": "191e15f7-1743-4fa4-b02e-b84e5eb26790",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -576,
+        32
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        32
+      ],
+      "id": "b7d54a89-2ac0-4f55-a3a4-4ad02c772205",
+      "name": "Telegram Trigger",
+      "webhookId": "f7b24e5c-6669-4601-bc0b-30f3d4ca7c00",
+      "credentials": {
+        "telegramApi": {
+          "id": "WGzxADyO0LNuLEIU",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-hrd",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -832,
+        240
+      ],
+      "id": "30dbc7ea-edec-4fe6-8402-53944590b7a4",
+      "name": "Webhook",
+      "webhookId": "bc3934df-8d10-48df-9960-f0db1e806328"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "This tool retrieves relevant context from Pinecone based on the user's query by performing vector similarity search.\n\nKnowledge base ini berisi data HRD internal perusahaan \n(seperti kebijakan karyawan, SOP, rekrutmen, cuti, absensi, \nstruktur organisasi, dan peraturan kerja).\n\nGunakan hanya informasi dari knowledge base ini.\nJika pertanyaan berada di luar konteks HRD \natau data tidak ditemukan, nyatakan dengan jelas \nbahwa informasi tidak tersedia.\n\n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "data-hrd",
+          "mode": "list",
+          "cachedResultName": "data-hrd"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        256
+      ],
+      "id": "a102a678-7e63-45c4-a00c-9af9ffccaff8",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "X5KHexJkzInsu4N4",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        384
+      ],
+      "id": "8f2ce758-f963-493e-9aaa-1aa7c63d9ee5",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "SbkNSL5b4o3OSODv",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0fab176b-0a8c-4f35-adb2-2c9e11c3cbd9",
+              "leftValue": "={{ $('Webhook').isExecuted }}",
+              "rightValue": "web-app",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -272,
+        64
+      ],
+      "id": "166b544f-1770-40a9-99fd-4383417f4eca",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "description": "call this tool to spesify",
+        "workflowId": {
+          "__rl": true,
+          "value": "W6jddFqf26DAfnZY",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/W6jddFqf26DAfnZY",
+          "cachedResultName": "pinecone"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -496,
+        240
+      ],
+      "id": "5005164e-1d12-41bc-9536-87339b9c984f",
+      "name": "Call 'pinecone'"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "8ad64cb1-cb9b-4cef-97fa-7de9ba518cdf",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Node: Code in JavaScript (Run once for each item)\n//\n// Output akhir untuk Webhook: { reply: \"...\" }\n// Kita ambil text dari AI Agent dengan beberapa kemungkinan struktur.\n\nfunction pickFirstString(...vals) {\n  for (const v of vals) {\n    if (typeof v === 'string' && v.trim().length > 0) return v.trim();\n  }\n  return '';\n}\n\n// Kemungkinan-kemungkinan output dari node AI Agent / model\nconst text =\n  pickFirstString(\n    $json.output,                         // sering dipakai n8n AI Agent\n    $json.answer,                         // kalau kamu set field answer\n    $json.text,                           // kadang output jadi text\n    $json?.message?.content,              // beberapa node model\n    $json?.choices?.[0]?.message?.content,\n    $json?.response?.[0]?.content?.[0]?.text,\n  ) || 'Maaf, terjadi kesalahan.';\n\n// Webapp kamu enaknya cukup baca reply\nreturn {\n  reply: text,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "c9348bbd-2aa2-4411-836e-5931645588c0",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Correct errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'pinecone'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bb27a334-680c-430d-95c7-5d6d9f3498c9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d23a32b8c4e9d011f86d872c56486220f1f27236128b0def699c54210f2fc956"
+  },
+  "id": "e8IFDVje66CIOw8b",
+  "tags": []
+}
